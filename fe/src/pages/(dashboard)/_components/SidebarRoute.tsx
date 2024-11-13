@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart, List } from "lucide-react";
+import { BarChart, List, ShoppingCart, DollarSign, User, Package, Percent, Settings } from "lucide-react";
 import SidebarItem from "./SidebarItem";
 
 const routes = [
@@ -11,9 +11,40 @@ const routes = [
     },
     {
         icon: List,
-        label: "Sản phẩm",
+        label: "Quản lý sản phẩm",
         href: "/admin/products",
     },
+    {
+        icon: Settings,
+        label: "Quản lý thuộc tính",
+        href: "/admin/attributes",
+    },
+    {
+        icon: ShoppingCart,
+        label: "Quản lý đơn hàng",
+        href: "/admin/orders",
+    },
+    {
+        icon: DollarSign,
+        label: "Bán hàng tại quầy",
+        href: "/admin/pos",
+    },
+    {
+        icon: Package,
+        label: "Trả hàng",
+        href: "/admin/returns",
+    },
+    {
+        icon: Percent,
+        label: "Giảm giá",
+        href: "/admin/discounts",
+    },
+    {
+        icon: User,
+        label: "Tài khoản",
+        href: "/admin/accounts",
+    },
+
 ];
 
 const SidebarRoutes = () => {

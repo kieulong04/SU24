@@ -14,6 +14,10 @@ const orderItemSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         auto: true,
     },
+    productId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+    },
     name: {
         type: String,
         required: true,
@@ -24,6 +28,25 @@ const orderItemSchema = new mongoose.Schema({
     },
     quantity: {
         type: Number,
+        required: true,
+    },
+});
+
+const customerInfoSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true,
+    },
+    phone: {
+        type: String,
+        required: true,
+    },
+    email: {
+        type: String,
+        required: true,
+    },
+    address: {
+        type: String,
         required: true,
     },
 });
@@ -39,8 +62,8 @@ const orderSchema = new mongoose.Schema({
         required: true,
         unique: true,
     },
-    customerName: {
-        type: String,
+    customerInfo: {
+        type: customerInfoSchema,
         required: true,
     },
     totalPrice: {
@@ -49,7 +72,7 @@ const orderSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ["pending", "confirmed", "shipped", "delivered"],
+        enum: ["pending", "confirmed", "shipped", "delivered", "cancelled"],
         default: "pending",
     },
     createdAt: {
@@ -57,11 +80,16 @@ const orderSchema = new mongoose.Schema({
         default: Date.now,
     },
 });
-// Tạo pre-save hook để sinh orderNumber trước khi lưu vào cơ sở dữ liệu
-orderSchema.pre("save", function (next) {
+
+// Tạo pre-validate hook để sinh orderNumber trước khi xác thực và lưu vào cơ sở dữ liệu
+orderSchema.pre("validate", function (next) {
     if (!this.orderNumber) {
         this.orderNumber = generateOrderNumber();
     }
     next();
 });
-export default mongoose.model("Order", orderSchema);
+
+// Kiểm tra xem model đã được định nghĩa hay chưa trước khi định nghĩa lại
+const Order = mongoose.models.Order || mongoose.model("Order", orderSchema);
+
+export default Order;

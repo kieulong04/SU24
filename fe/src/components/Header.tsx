@@ -39,7 +39,7 @@ const Header = () => {
                     <div className='header-items'>
                         <div className='header-item-user'>
                             <span>
-                                <img src={UserIcon} />
+                                <NavLink to='/signin'><img src={UserIcon}  /></NavLink>
                             </span>
                         </div>
                         <div className='header-item-user'>
@@ -54,7 +54,7 @@ const Header = () => {
                         </div>
                         <div className='header-item-user'>
                             <span>
-                                <img src={CartIcon} />
+                                <NavLink to='/cart'><img src={CartIcon}  /></NavLink>
                             </span>
                         </div>
                     </div>

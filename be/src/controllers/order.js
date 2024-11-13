@@ -1,15 +1,32 @@
 import Order from "../models/order.js";
+import Cart from "../models/cart.js"; // Import model Cart
 import { StatusCodes } from "http-status-codes";
 
 export const createOrder = async (req, res) => {
     try {
         const { userId, items, totalPrice, customerInfo } = req.body;
         const order = await Order.create({ userId, items, totalPrice, customerInfo });
+
+        // Trừ số lượng tồn kho của các sản phẩm đã mua
+        for (const item of items) {
+            await Product.updateOne(
+                { _id: item.productId },
+                { $inc: { countInStock: -item.quantity } }
+            );
+        }
+
+        // Xóa sản phẩm trong giỏ hàng sau khi tạo đơn hàng thành công
+        await Cart.updateOne(
+            { userId },
+            { $set: { products: [] } }
+        );
+
         return res.status(StatusCodes.CREATED).json(order);
     } catch (error) {
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
     }
 };
+
 export const getOrders = async (req, res) => {
     try {
         const order = await Order.find();
@@ -21,6 +38,7 @@ export const getOrders = async (req, res) => {
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
     }
 };
+
 export const getOrderById = async (req, res) => {
     try {
         const { userId, orderId } = req.params;
@@ -33,6 +51,7 @@ export const getOrderById = async (req, res) => {
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
     }
 };
+
 export const updateOrder = async (req, res) => {
     try {
         const { orderId } = req.params;
@@ -47,6 +66,7 @@ export const updateOrder = async (req, res) => {
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
     }
 };
+
 export const updateOrderStatus = async (req, res) => {
     try {
         const { orderId } = req.params;

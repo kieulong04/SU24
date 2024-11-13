@@ -7,15 +7,23 @@ export const getCartByUserId = async (req, res) => {
     try {
         const cart = await Cart.findOne({ userId }).populate("products.productId");
         const cartData = {
-            products: cart.products.map((item) => ({
-                productId: item.productId._id,
-                name: item.productId.name,
-                price: item.productId.price,
-                quantity: item.quantity,
-            })),
+            products: cart.products.map((item) => {
+                const price = item.productId.price;
+                const discount = item.productId.discount || 0;
+                const discountedPrice = price - (price * discount) / 100;
+                return {
+                    productId: item.productId._id,
+                    name: item.productId.name,
+                    countInStock:item.productId.countInStock,
+                    quantity: item.quantity,
+                    price: discountedPrice,
+                };
+            }),
         };
         return res.status(StatusCodes.OK).json(cartData);
-    } catch (error) {}
+    } catch (error) {
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
+    }
 };
 // Thêm sản phẩm vào giỏ hàng
 export const addItemToCart = async (req, res) => {

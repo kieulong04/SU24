@@ -1,6 +1,9 @@
 import { IProduct } from '@/common/types/product';
 import { Link } from 'react-router-dom';
 import Pagination from '../../../../components/Pagination';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
+import { useLocalStorage } from '@/common/hooks/useStorage';
 
 type ProductListProps = {
     products?: IProduct[];
@@ -12,6 +15,24 @@ type ProductListProps = {
 };
 
 const ProductList = ({ products, pagination }: ProductListProps) => {
+    const queryClient = useQueryClient();
+    const [user] = useLocalStorage("user", {}); 
+    const userId = user?.user._id;
+
+    const { mutate } = useMutation({
+        mutationFn: async ({ productId, quantity }: { productId: string | number; quantity: number }) => {
+            const { data } = await axios.post(`http://localhost:8080/api/v1/carts/add-to-cart`, { userId, productId, quantity });
+            return data;
+        }
+        ,
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["cart", userId],
+            });
+        }
+    });
+    console.log(products);
+
     const { totalPages } = pagination || { totalPages: 1 };
     return (
         <div className="container mx-auto p-4">
@@ -37,15 +58,15 @@ const ProductList = ({ products, pagination }: ProductListProps) => {
                                         {product.name}
                                     </Link>
                                 </h3>
-                                <Link to={`/categories/${product.category}`} className="text-gray-500 text-sm mb-2 block">
-                                    Category
+                                <Link to={`/categories/${product.category?._id}`} className="text-gray-500 text-sm mb-2 block">
+                                    {product.category?.name}
                                 </Link>
-                                <div className="flex items-center mb-2">
-                                    <span className="text-red-500 text-xl font-bold mr-2">
+                                <div className="flex items-center mb-2 ">
+                                    <span className="text-red-500 text-xl font-bold mr-2 pr-5">
                                         {product.price - product.price * (product.discount / 100)} VND
                                     </span>
                                     {product.discount > 0 && (
-                                        <span className="text-gray-500 line-through">
+                                        <span className="text-gray-500 line-through pl-">
                                             {product.price} VND
                                         </span>
                                     )}
@@ -55,19 +76,14 @@ const ProductList = ({ products, pagination }: ProductListProps) => {
                                         to={`/products/${product._id}`}
                                         className="flex-1 bg-blue-500 text-white text-center py-2 rounded hover:bg-blue-600"
                                     >
-                                        Quick View
+                                        Xem sản phẩm
                                     </Link>
                                     <button
                                         className="flex-1 bg-green-500 text-white text-center py-2 rounded hover:bg-green-600"
-                                        // onClick={() => mutate({ productId: product._id, quantity: 1 })}
+                                        onClick={() =>product._id && mutate({ productId: product._id, quantity: 1 })}
                                     >
-                                        Add To Cart
+                                        Thêm vào giỏ hàng
                                     </button>
-                                </div>
-                                <div className="flex justify-between items-center mt-4 text-gray-500 text-sm">
-                                    <span className="cursor-pointer hover:text-gray-700">Share</span>
-                                    <span className="cursor-pointer hover:text-gray-700">Compare</span>
-                                    <span className="cursor-pointer hover:text-gray-700">Like</span>
                                 </div>
                             </div>
                         </div>

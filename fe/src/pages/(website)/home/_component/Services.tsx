@@ -1,3 +1,4 @@
+import { accumulationIcon, adviseIcon, cupIcon, giftIcon } from '@/components/icons'
 import React from 'react'
 
 const Services = () => {
@@ -6,7 +7,7 @@ const Services = () => {
             <div className='container-fluid'>
                 <div className='service-list'>
                     <div className='service-item'>
-                        <img src='./assets/icons/10.svg' className='service__image' />
+                        <img src={cupIcon} className='service__image' />
                         <div className='service-info'>
                             <h4 className='service__name'>High Quality</h4>
                             <p className='service__description'>crafted from top materials</p>
@@ -14,7 +15,7 @@ const Services = () => {
                     </div>
                     {/*End service-item*/}
                     <div className='service-item'>
-                        <img src='./assets/icons/11.svg' className='service__image' />
+                        <img src={accumulationIcon} className='service__image' />
                         <div className='service-info'>
                             <h4 className='service__name'>High Quality</h4>
                             <p className='service__description'>crafted from top materials</p>
@@ -22,7 +23,7 @@ const Services = () => {
                     </div>
                     {/*End service-item*/}
                     <div className='service-item'>
-                        <img src='./assets/icons/12.svg' className='service__image' />
+                        <img src={giftIcon} className='service__image' />
                         <div className='service-info'>
                             <h4 className='service__name'>High Quality</h4>
                             <p className='service__description'>crafted from top materials</p>
@@ -30,7 +31,7 @@ const Services = () => {
                     </div>
                     {/*End service-item*/}
                     <div className='service-item'>
-                        <img src='./assets/icons/13.svg' className='service__image' />
+                        <img src={adviseIcon} className='service__image' />
                         <div className='service-info'>
                             <h4 className='service__name'>High Quality</h4>
                             <p className='service__description'>crafted from top materials</p>

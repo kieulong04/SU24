@@ -1,113 +1,213 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-import useCart from '@/common/hooks/useCart'
-import { ChangeEvent } from 'react'
+import useCart from "@/common/hooks/useCart";
+import { useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 
 const CartPage = () => {
-    const { data, mutate, handleQuantityChange, calculateTotal, isLoading, isError } = useCart()
-    if (isLoading) return <p>Loading...</p>
-    if (isError) return <p>Error</p>
+    const {
+        data,
+        handleInputChange,
+        handleInputBlur,
+        handleInputKeyDown,
+        mutate,
+        calculateTotalPrice,
+        isLoading,
+        isError,
+        quantities,
+    } = useCart();
+    const navigate = useNavigate();
+
+    if (isLoading) return <div>Loading...</div>;
+    if (isError) return <div>Error</div>;
+
+    const handleCheckout = () => {
+        navigate("/order");
+    };
+
+    const handleShop = () => {
+        navigate("/shop");
+    };
+
+    const calculateDiscountedPrice = (price: number, discount: number) => {
+        return price - (price * discount) / 100;
+    };
+
+    const handleQuantityChange = (productId: string, quantity: number, countInStock: number) => {
+        if (quantity > countInStock) {
+            toast.error("Số lượng yêu cầu vượt quá số lượng tồn kho!");
+        } else if (quantity < 1) {
+            toast.error("Số lượng phải lớn hơn 0!");
+        } else {
+            handleInputChange(productId, { target: { value: quantity.toString() } } as React.ChangeEvent<HTMLInputElement>);
+        }
+    };
 
     return (
-        <div className='container'>
-            <table className='w-full'>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Tên sản phẩm</th>
-                        <th>Giá</th>
-                        <th>Số lượng</th>
-                        <th>Tổng giá</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {data?.products.map((product: any, index: number) => {
-                        return (
-                            <tr key={index}>
-                                <td>{index + 1}</td>
-                                <td className='border-2'>{product.name}</td>
-                                <td className='border-2'>{product.price}</td>
-                                <td className='border-2'>
-                                    <button
-                                        className='py-2 px-4 bg-slate-400'
-                                        onClick={() =>
-                                            mutate({
-                                                action: 'DECREMENT',
-                                                productId: product.productId
-                                            })
-                                        }
-                                    >
-                                        <svg
-                                            xmlns='http://www.w3.org/2000/svg'
-                                            fill='none'
-                                            viewBox='0 0 24 24'
-                                            strokeWidth={1.5}
-                                            stroke='currentColor'
-                                            className='w-6 h-6'
-                                        >
-                                            <path
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                                d='m19.5 8.25-7.5 7.5-7.5-7.5'
-                                            />
-                                        </svg>
-                                    </button>
-                                    {product.quantity}
-                                    <input
-                                        type='number'
-                                        className='border border-red-100'
-                                        onInput={(e) =>
-                                            handleQuantityChange(product.productId, e as ChangeEvent<HTMLInputElement>)
-                                        }
-                                    />
-                                    <button
-                                        className='py-2 px-4 bg-emerald-400'
-                                        onClick={() =>
-                                            mutate({
-                                                action: 'INCREMENT',
-                                                productId: product.productId
-                                            })
-                                        }
-                                    >
-                                        <svg
-                                            xmlns='http://www.w3.org/2000/svg'
-                                            fill='none'
-                                            viewBox='0 0 24 24'
-                                            strokeWidth={1.5}
-                                            stroke='currentColor'
-                                            className='w-6 h-6'
-                                        >
-                                            <path
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                                d='m4.5 15.75 7.5-7.5 7.5 7.5'
-                                            />
-                                        </svg>
-                                    </button>
-                                </td>
-                                <td className='border-2'>{product.price * product.quantity}</td>
-                                <td className='border-2'>
-                                    <button
-                                        className='py-2 px-4 bg-red-500 text-white rounded-sm'
-                                        onClick={() =>
-                                            mutate({
-                                                action: 'REMOVE',
-                                                productId: product.productId
-                                            })
-                                        }
-                                    >
-                                        Xóa
-                                    </button>
-                                </td>
+        <div className="container mx-auto p-4">
+            <ToastContainer />
+            {data?.products.length === 0 ? (
+                <div className="text-center">
+                    <p className="text-lg mb-4">
+                        Giỏ hàng của bạn đang trống. Hãy thêm sản phẩm vào giỏ hàng!
+                    </p>
+                    <button
+                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                        onClick={handleShop}
+                    >
+                        Mua hàng
+                    </button>
+                </div>
+            ) : (
+                <>
+                    <h1 className="text-2xl font-bold mb-4">
+                        Giỏ hàng của bạn
+                    </h1>
+                    <table className="min-w-full bg-white border border-gray-200">
+                        <thead>
+                            <tr className="bg-gray-100">
+                                <th className="py-2 px-4 border-b text-left">
+                                    #
+                                </th>
+                                <th className="py-2 px-4 border-b text-left">
+                                    Tên sản phẩm
+                                </th>
+                                <th className="py-2 px-4 border-b text-right">
+                                    Giá
+                                </th>
+                                <th className="py-2 px-4 border-b text-center">
+                                    Số lượng
+                                </th>
+                                <th className="py-2 px-4 border-b text-right">
+                                    Tổng
+                                </th>
+                                <th className="py-2 px-4 border-b text-center">
+                                    Hành động
+                                </th>
                             </tr>
-                        )
-                    })}
-                </tbody>
-            </table>
-            <p>Total: ${calculateTotal()}</p>
+                        </thead>
+                        <tbody>
+                            {data?.products.map(
+                                (product: any, index: number) => {
+                                    const price = parseFloat(product.price) || 0;
+                                    const discount = parseFloat(product.discount) || 0;
+                                    const discountedPrice = calculateDiscountedPrice(price, discount);
+                                    return (
+                                        <tr
+                                            key={index}
+                                            className="hover:bg-gray-50"
+                                        >
+                                            <td className="py-2 px-4 border-b text-center">
+                                                {index + 1}
+                                            </td>
+                                            <td className="py-2 px-4 border-b">
+                                                {product.name}
+                                            </td>
+                                            <td className="py-2 px-4 border-b text-right">
+                                                {discountedPrice.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
+                                            </td>
+                                            <td className="py-2 px-4 border-b">
+                                                <div className="flex items-center justify-center">
+                                                    <button
+                                                        className="w-8 h-8 bg-gray-200 rounded-l hover:bg-gray-300 focus:outline-none flex items-center justify-center"
+                                                        onClick={() =>
+                                                            mutate({
+                                                                action: "DECREMENT",
+                                                                productId:
+                                                                    product.productId,
+                                                            })
+                                                        }
+                                                        disabled={
+                                                            product.quantity <=
+                                                            1
+                                                        }
+                                                    >
+                                                        -
+                                                    </button>
+                                                    <input
+                                                        type="number"
+                                                        className="w-12 h-8 text-center border-t border-b border-gray-300 focus:outline-none appearance-none"
+                                                        value={
+                                                            quantities[
+                                                                product
+                                                                    .productId
+                                                            ] ??
+                                                            product.quantity
+                                                        }
+                                                        onChange={(e) =>
+                                                            handleQuantityChange(
+                                                                product.productId,
+                                                                parseInt(e.target.value),
+                                                                product.countInStock
+                                                            )
+                                                        }
+                                                        onBlur={(e) =>
+                                                            handleInputBlur(
+                                                                product.productId,
+                                                                e,
+                                                            )
+                                                        }
+                                                        onKeyDown={(e) =>
+                                                            handleInputKeyDown(
+                                                                product.productId,
+                                                                e,
+                                                            )
+                                                        }
+                                                        min="1"
+                                                    />
+                                                    <button
+                                                        className="w-8 h-8 bg-gray-200 rounded-r hover:bg-gray-300 focus:outline-none flex items-center justify-center"
+                                                        onClick={() =>
+                                                            mutate({
+                                                                action: "INCREMENT",
+                                                                productId:
+                                                                    product.productId,
+                                                            })
+                                                        }
+                                                    >
+                                                        +
+                                                    </button>
+                                                </div>
+                                            </td>
+                                            <td className="py-2 px-4 border-b text-right">
+                                                {(discountedPrice * product.quantity).toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
+                                            </td>
+                                            <td className="py-2 px-4 border-b text-center">
+                                                <button
+                                                    className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                                                    onClick={() =>
+                                                        mutate({
+                                                            action: "REMOVE",
+                                                            productId:
+                                                                product.productId,
+                                                        })
+                                                    }
+                                                >
+                                                    Xóa
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                },
+                            )}
+                        </tbody>
+                    </table>
+                    <div className="mt-4 text-right">
+                        <span className="text-xl font-bold">
+                            Tổng cộng: {calculateTotalPrice().toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
+                        </span>
+                    </div>
+                    <div className="mt-4 text-right">
+                        <button
+                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                            onClick={handleCheckout}
+                        >
+                            Thanh toán
+                        </button>
+                    </div>
+                </>
+            )}
         </div>
-    )
-}
+    );
+};
 
-export default CartPage
+export default CartPage;

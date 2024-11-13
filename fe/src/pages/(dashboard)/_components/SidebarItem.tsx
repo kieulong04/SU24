@@ -2,6 +2,7 @@
 import { cn } from "@/common/lib/utils";
 import { LucideIcon } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
+
 type SidebarItemProps = {
     icon: LucideIcon;
     label: string;
@@ -9,15 +10,14 @@ type SidebarItemProps = {
 };
 
 const SidebarItem = ({ icon: Icon, label, href }: SidebarItemProps) => {
-    const pathname = useLocation().pathname;
+    const { pathname } = useLocation();
     const navigate = useNavigate();
-    const isActive =
-        (pathname === "/" && href === "/") ||
-        pathname === href ||
-        pathname.startsWith(`${href}/`);
+    const isActive = pathname === href || pathname.startsWith(`${href}/`);
+
     const onClick = () => {
         navigate(href);
     };
+
     return (
         <button
             onClick={onClick}

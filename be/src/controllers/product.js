@@ -218,11 +218,21 @@ export const updateProductById = async (req, res) => {
 
 export const related = async (req, res) => {
     try {
-        const product = await Product.find({
+        const products = await Product.find({
             category: req.params.categoryId,
             _id: { $ne: req.params.productId },
+        })
+        .populate('category', 'name') // Populate category name
+        .populate({
+            path: 'attributes',
+            populate: {
+                path: 'values',
+                model: 'ValueAttribute',
+                select: 'name'
+            }
         });
-        return res.status(StatusCodes.OK).json(product);
+
+        return res.status(StatusCodes.OK).json(products);
     } catch (error) {
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
     }
