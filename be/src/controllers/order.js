@@ -1,26 +1,10 @@
-import Order from "../models/order.js";
-import Cart from "../models/cart.js"; // Import model Cart
-import { StatusCodes } from "http-status-codes";
+import { StatusCodes } from 'http-status-codes';
+import Order from '../models/order';
 
 export const createOrder = async (req, res) => {
     try {
-        const { userId, items, totalPrice, customerInfo } = req.body;
-        const order = await Order.create({ userId, items, totalPrice, customerInfo });
-
-        // Trừ số lượng tồn kho của các sản phẩm đã mua
-        for (const item of items) {
-            await Product.updateOne(
-                { _id: item.productId },
-                { $inc: { countInStock: -item.quantity } }
-            );
-        }
-
-        // Xóa sản phẩm trong giỏ hàng sau khi tạo đơn hàng thành công
-        await Cart.updateOne(
-            { userId },
-            { $set: { products: [] } }
-        );
-
+        const order = new Order(req.body);
+        await order.save();
         return res.status(StatusCodes.CREATED).json(order);
     } catch (error) {
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
@@ -29,11 +13,8 @@ export const createOrder = async (req, res) => {
 
 export const getOrders = async (req, res) => {
     try {
-        const order = await Order.find();
-        if (order.length === 0) {
-            return res.status(StatusCodes.NOT_FOUND).json({ error: "No orders found" });
-        }
-        return res.status(StatusCodes.OK).json(order);
+        const orders = await Order.find();
+        return res.status(StatusCodes.OK).json(orders);
     } catch (error) {
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
     }
@@ -42,12 +23,14 @@ export const getOrders = async (req, res) => {
 export const getOrderById = async (req, res) => {
     try {
         const { userId, orderId } = req.params;
-        const order = await Order.findOne({ userId, _id: orderId });
+        console.log(`Fetching order with userId: ${userId} and orderId: ${orderId}`);
+        const order = await Order.findOne({ _id: orderId, userId });
         if (!order) {
-            return res.status(StatusCodes.NOT_FOUND).json({ error: "Order not found" });
+            return res.status(StatusCodes.NOT_FOUND).json({ error: "Không tìm thấy đơn hàng" });
         }
         return res.status(StatusCodes.OK).json(order);
     } catch (error) {
+        console.error('Error fetching order:', error);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
     }
 };
@@ -59,7 +42,7 @@ export const updateOrder = async (req, res) => {
             new: true,
         });
         if (!order) {
-            return res.status(StatusCodes.NOT_FOUND).json({ error: "Order not found" });
+            return res.status(StatusCodes.NOT_FOUND).json({ error: "Không tìm thấy đơn hàng" });
         }
         return res.status(StatusCodes.OK).json(order);
     } catch (error) {
@@ -75,22 +58,25 @@ export const updateOrderStatus = async (req, res) => {
         const validStatus = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
 
         if (!validStatus.includes(status)) {
-            return res.status(StatusCodes.BAD_REQUEST).json({ error: "Invalid status" });
+            return res.status(StatusCodes.BAD_REQUEST).json({ error: "Trạng thái không hợp lệ" });
         }
 
         const order = await Order.findOne({ _id: orderId });
         if (!order) {
-            return res.status(StatusCodes.NOT_FOUND).json({ error: "Order not found" });
+            return res.status(StatusCodes.NOT_FOUND).json({ error: "Không tìm thấy đơn hàng" });
         }
 
         if (order.status === "delivered" || order.status === "cancelled") {
-            return res.status(StatusCodes.BAD_REQUEST).json({ error: "Order cannot be updated" });
+            return res.status(StatusCodes.BAD_REQUEST).json({ error: "Không thể cập nhật đơn hàng" });
         }
+
+        // Lưu lịch sử thay đổi trạng thái
+        order.history.push({ status });
 
         order.status = status;
         await order.save();
 
-        return res.status(StatusCodes.OK).json({ message: "Order status updated successfully" });
+        return res.status(StatusCodes.OK).json({ message: "Cập nhật trạng thái đơn hàng thành công" });
     } catch (error) {
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
     }

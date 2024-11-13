@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEdit, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { useNavigate } from 'react-router-dom';
 
 interface Order {
     _id: string;
@@ -9,6 +12,7 @@ interface Order {
     customerInfo: { name: string };
     createdAt: string;
     status: string;
+    userId: string; // Thêm userId vào interface Order
 }
 
 const OrderList: React.FC = () => {
@@ -16,6 +20,11 @@ const OrderList: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
+    const navigate = useNavigate();
+
+    const handleEdit = (userId: string, orderId: string) => {
+        navigate(`/admin/orders/${userId}/${orderId}/edit`);
+    };
 
     useEffect(() => {
         // Fetch orders from API
@@ -89,9 +98,12 @@ const OrderList: React.FC = () => {
                             <td className="border px-4 py-2">{order.customerInfo.name}</td>
                             <td className="border px-4 py-2">{new Date(order.createdAt).toLocaleDateString()}</td>
                             <td className="border px-4 py-2">{order.status}</td>
-                            <td className="border px-4 py-2">
-                                <button className="text-blue-500 hover:text-blue-700">
-                                    <i className="fas fa-edit"></i>
+                            <td className="py-2 px-4 border-b text-center">
+                                <button
+                                    onClick={() => handleEdit(order.userId, order._id)}
+                                    className="text-blue-500 hover:text-blue-700"
+                                >
+                                    <FontAwesomeIcon icon={faEdit} className="h-5 w-5 inline" />
                                 </button>
                             </td>
                         </tr>

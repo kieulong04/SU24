@@ -20,6 +20,8 @@ import AddAttribute from "@/pages/(dashboard)/attributes/_components/add";
 import EditAttribute from "@/pages/(dashboard)/attributes/_components/edit";
 import AddProduct from "@/pages/(dashboard)/product/_components/add";
 import OrderManager from "@/pages/(dashboard)/order/page";
+import EditProduct from "@/pages/(dashboard)/product/_components/edit";
+import EditOrder from "@/pages/(dashboard)/order/_components/edit";
 
 const Router = () => {
     return (
@@ -51,7 +53,9 @@ const Router = () => {
                     <Route path="attributes/:id/edit" element={<EditAttribute />} />
                     <Route path="products" element={<ProductManagement />} />
                     <Route path="products/add" element={<AddProduct />} />
+                    <Route path="products/:id/edit" element={<EditProduct />} />
                     <Route path="orders" element={<OrderManager />} />
+                    <Route path="orders/:userId/:orderId/edit" element={<EditOrder />} />
 
                 </Route>
                 <Route path="*" element={<NotFound />} />

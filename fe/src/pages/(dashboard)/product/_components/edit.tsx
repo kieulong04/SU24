@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 
-const AddProduct: React.FC = () => {
+const EditProduct: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [productName, setProductName] = useState('');
   const [price, setPrice] = useState('');
@@ -17,22 +18,43 @@ const AddProduct: React.FC = () => {
   const [attributes, setAttributes] = useState<{ _id: string; name: string }[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedAttributes, setSelectedAttributes] = useState<string[]>([]);
+  const [currentImage, setCurrentImage] = useState<string | null>(null);
+  const [currentGallery, setCurrentGallery] = useState<string[]>([]);
 
   useEffect(() => {
     // Fetch categories and attributes from API
     axios.get('http://localhost:8080/api/v1/categories').then(response => {
       setCategories(response.data);
-      if (response.data.length > 0) {
-        setSelectedCategory(response.data[0]._id);
-      }
+    }).catch(error => {
+      console.error('Error fetching categories:', error);
     });
+
     axios.get('http://localhost:8080/api/v1/attributes').then(response => {
       setAttributes(response.data);
+    }).catch(error => {
+      console.error('Error fetching attributes:', error);
     });
-  }, []);
 
-  const handleAddProduct = () => {
-    console.log(selectedCategory)
+    // Fetch product data by ID
+    axios.get(`http://localhost:8080/api/v1/products/${id}`).then(response => {
+      const product = response.data;
+      setProductName(product.name);
+      setPrice(product.price);
+      setDescription(product.description);
+      setDiscount(product.discount);
+      setCountInStock(product.countInStock);
+      setFeatured(product.featured);
+      setTags(product.tags);
+      setSelectedCategory(product.category._id);
+      setSelectedAttributes(product.attributes.map((attr: any) => attr._id));
+      setCurrentImage(product.image);
+      setCurrentGallery(product.gallery);
+    }).catch(error => {
+      console.error('Error fetching product:', error);
+    });
+  }, [id]);
+
+  const handleEditProduct = () => {
     const formData = new FormData();
     formData.append('name', productName);
     formData.append('slug', productName.toLowerCase().replace(/ /g, '-'));
@@ -47,37 +69,30 @@ const AddProduct: React.FC = () => {
       formData.append('image', image);
     }
     gallery.forEach((file) => {
-      formData.append(`gallery`, file);
+      formData.append('gallery', file);
     });
 
-    // Chuyển đổi mảng selectedAttributes thành một chuỗi duy nhất với các ID nằm trong ngoặc đơn
     const attributesString = selectedAttributes.join(',');
     formData.append('attributes', attributesString);
 
-    // Send new product to API
-    axios.post('http://localhost:8080/api/v1/products', formData, {
+    // Send updated product to API
+    axios.put(`http://localhost:8080/api/v1/products/${id}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
     })
       .then(response => {
-        console.log('Product added:', response.data);
+        console.log('Product updated:', response.data);
         navigate('/admin/products'); // Navigate to the product list page
       })
       .catch(error => {
-        console.error('There was an error adding the product!', error);
+        console.error('There was an error updating the product!', error);
       });
   };
 
-  // Kiểm tra kiểu dữ liệu của selectedAttributes
-  console.log(typeof selectedAttributes); // sẽ in ra "object"
-  selectedAttributes.forEach(attr => {
-    console.log( attr); // sẽ in ra "string" cho mỗi phần tử
-  });
-
   return (
     <div className="max-w-md mx-auto bg-white shadow-md rounded-lg p-6">
-      <h2 className="text-2xl font-bold mb-4">Thêm Sản Phẩm</h2>
+      <h2 className="text-2xl font-bold mb-4">Chỉnh Sửa Sản Phẩm</h2>
       <div className="mb-4">
         <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="productName">
           Tên Sản Phẩm
@@ -165,6 +180,11 @@ const AddProduct: React.FC = () => {
         <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="image">
           Hình Ảnh
         </label>
+        {currentImage && (
+          <div className="mb-2">
+            <img src={`http://localhost:8080/${currentImage}`} alt="Current" className="w-32 h-32 object-cover" />
+          </div>
+        )}
         <input
           type="file"
           id="image"
@@ -176,6 +196,13 @@ const AddProduct: React.FC = () => {
         <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="gallery">
           Thư Viện Ảnh
         </label>
+        {currentGallery.length > 0 && (
+          <div className="mb-2 flex flex-wrap">
+            {currentGallery.map((img, index) => (
+              <img key={index} src={`http://localhost:8080/${img}`} alt={`Gallery ${index}`} className="w-32 h-32 object-cover mr-2 mb-2" />
+            ))}
+          </div>
+        )}
         <input
           type="file"
           id="gallery"
@@ -220,13 +247,13 @@ const AddProduct: React.FC = () => {
         </select>
       </div>
       <button
-        onClick={handleAddProduct}
+        onClick={handleEditProduct}
         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
       >
-        Thêm Sản Phẩm
+        Cập Nhật Sản Phẩm
       </button>
     </div>
   );
 };
 
-export default AddProduct;
+export default EditProduct;

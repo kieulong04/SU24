@@ -1,21 +1,9 @@
-import mongoose from "mongoose";
-
-// Hàm để sinh orderNumber
-const generateOrderNumber = () => {
-    const timestamp = Date.now().toString();
-    const random = Math.floor(Math.random() * 1000)
-        .toString()
-        .padStart(3, "0");
-    return `${timestamp}-${random}`;
-};
+import mongoose from 'mongoose';
 
 const orderItemSchema = new mongoose.Schema({
-    _id: {
-        type: mongoose.Schema.Types.ObjectId,
-        auto: true,
-    },
     productId: {
         type: mongoose.Schema.Types.ObjectId,
+        ref: 'Product',
         required: true,
     },
     name: {
@@ -52,10 +40,6 @@ const customerInfoSchema = new mongoose.Schema({
 });
 
 const orderSchema = new mongoose.Schema({
-    userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-    },
     items: [orderItemSchema],
     orderNumber: {
         type: String,
@@ -79,17 +63,20 @@ const orderSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
+    history: [
+        {
+            date: {
+                type: Date,
+                default: Date.now,
+            },
+            status: {
+                type: String,
+                enum: ["pending", "confirmed", "shipped", "delivered", "cancelled"],
+            },
+        },
+    ],
 });
 
-// Tạo pre-validate hook để sinh orderNumber trước khi xác thực và lưu vào cơ sở dữ liệu
-orderSchema.pre("validate", function (next) {
-    if (!this.orderNumber) {
-        this.orderNumber = generateOrderNumber();
-    }
-    next();
-});
-
-// Kiểm tra xem model đã được định nghĩa hay chưa trước khi định nghĩa lại
-const Order = mongoose.models.Order || mongoose.model("Order", orderSchema);
+const Order = mongoose.model('Order', orderSchema);
 
 export default Order;

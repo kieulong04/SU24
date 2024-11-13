@@ -13,6 +13,9 @@ export const create = async (req, res) => {
     try {
         const { name, slug, category, price, description, discount, countInStock, featured, tags, attributes } = req.body;
 
+        // Log dữ liệu attributes trước khi chuyển đổi
+        console.log("Attributes before conversion:", attributes);
+
         // Kiểm tra xem slug đã tồn tại hay chưa
         const existingProduct = await Product.findOne({ slug });
         if (existingProduct) {
@@ -42,6 +45,9 @@ export const create = async (req, res) => {
                 return res.status(StatusCodes.BAD_REQUEST).json({ error: "Invalid attribute ID" });
             }
         }
+
+        // Log dữ liệu attributes sau khi chuyển đổi
+        console.log("Attributes after conversion:", attributeIds);
 
         // Tạo sản phẩm mới
         const product = new Product({
@@ -172,38 +178,75 @@ export const updateProductById = async (req, res) => {
     try {
         const { name, slug, category, price, description, discount, countInStock, featured, tags, attributes } = req.body;
 
-        // Tìm sản phẩm cần cập nhật
+        // Validate category
+        if (!mongoose.Types.ObjectId.isValid(category)) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ message: "Invalid category ID" });
+        }
+
+        // Validate and convert attributes to ObjectId
+        let validAttributes = [];
+        if (Array.isArray(attributes)) {
+            validAttributes = attributes.map(attr => {
+                if (mongoose.Types.ObjectId.isValid(attr)) {
+                    return new mongoose.Types.ObjectId(attr);
+                } else {
+                    return null;
+                }
+            });
+            if (validAttributes.includes(null)) {
+                return res.status(StatusCodes.BAD_REQUEST).json({ message: "Invalid attribute ID" });
+            }
+        } else if (typeof attributes === 'string') {
+            validAttributes = attributes.split(',').map(attr => {
+                if (mongoose.Types.ObjectId.isValid(attr.trim())) {
+                    return new mongoose.Types.ObjectId(attr.trim());
+                } else {
+                    return null;
+                }
+            });
+            if (validAttributes.includes(null)) {
+                return res.status(StatusCodes.BAD_REQUEST).json({ message: "Invalid attribute ID" });
+            }
+        }
+
+        // Find the product to update
         const product = await Product.findById(req.params.id);
         if (!product) {
             return res.status(StatusCodes.NOT_FOUND).json({ message: "Product not found" });
         }
 
-        // Cập nhật thông tin sản phẩm
+        // Update product information
         product.name = name;
         product.slug = slug;
-        product.category = mongoose.Types.ObjectId(category); // Chuyển đổi category thành ObjectId
+        product.category = new mongoose.Types.ObjectId(category); // Convert category to ObjectId
         product.price = price;
         product.description = description;
         product.discount = discount;
         product.countInStock = countInStock;
         product.featured = featured;
         product.tags = tags;
-        product.attributes = attributes.map(attr => mongoose.Types.ObjectId(attr)); // Chuyển đổi attributes thành ObjectId
+        product.attributes = validAttributes; // Set validated attributes
 
-        // Xóa ảnh cũ nếu có ảnh mới
+        // Delete old image if a new image is uploaded
         if (req.files && req.files.image) {
             if (product.image) {
-                fs.unlinkSync(path.join(__dirname, '../', product.image));
+                const oldImagePath = path.join(__dirname, '../', product.image);
+                if (fs.existsSync(oldImagePath)) {
+                    fs.unlinkSync(oldImagePath);
+                }
             }
             product.image = path.posix.join('uploads', req.files.image[0].filename);
         }
 
-        // Xóa gallery cũ nếu có ảnh mới
+        // Delete old gallery if new gallery images are uploaded
         if (req.files && req.files.gallery) {
             product.gallery.forEach(file => {
-                fs.unlinkSync(path.join(__dirname, '../', file));
+                const oldGalleryPath = path.join(__dirname, '../', file);
+                if (fs.existsSync(oldGalleryPath)) {
+                    fs.unlinkSync(oldGalleryPath);
+                }
             });
-            product.gallery = []; // Xóa gallery cũ
+            product.gallery = []; // Clear old gallery
             req.files.gallery.forEach(file => {
                 product.gallery.push(path.posix.join('uploads', file.filename));
             });
@@ -212,7 +255,8 @@ export const updateProductById = async (req, res) => {
         const updatedProduct = await product.save();
         return res.status(StatusCodes.OK).json(updatedProduct);
     } catch (error) {
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error });
+        console.error('Error updating product:', error);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
     }
 };
 
