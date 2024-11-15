@@ -1,5 +1,13 @@
 import mongoose from 'mongoose';
 
+const generateOrderNumber = () => {
+    const timestamp = Date.now().toString();
+    const random = Math.floor(Math.random() * 1000)
+        .toString()
+        .padStart(3, "0");
+    return `${timestamp}-${random}`;
+};
+
 const orderItemSchema = new mongoose.Schema({
     productId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -40,10 +48,15 @@ const customerInfoSchema = new mongoose.Schema({
 });
 
 const orderSchema = new mongoose.Schema({
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    },
     items: [orderItemSchema],
     orderNumber: {
         type: String,
-        required: true,
+        // required: true,
         unique: true,
     },
     customerInfo: {
@@ -75,6 +88,13 @@ const orderSchema = new mongoose.Schema({
             },
         },
     ],
+});
+
+orderSchema.pre("save", function (next) {
+    if (!this.orderNumber) {
+        this.orderNumber = generateOrderNumber();
+    }
+    next();
 });
 
 const Order = mongoose.model('Order', orderSchema);

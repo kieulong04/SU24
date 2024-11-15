@@ -24,7 +24,11 @@ export const getOrderById = async (req, res) => {
     try {
         const { userId, orderId } = req.params;
         console.log(`Fetching order with userId: ${userId} and orderId: ${orderId}`);
-        const order = await Order.findOne({ _id: orderId, userId });
+        
+        // Kiểm tra truy vấn Mongo
+        const order = await Order.findOne({ _id: orderId, userId: userId });
+        console.log('Order found:', order);
+
         if (!order) {
             return res.status(StatusCodes.NOT_FOUND).json({ error: "Không tìm thấy đơn hàng" });
         }
@@ -71,7 +75,7 @@ export const updateOrderStatus = async (req, res) => {
         }
 
         // Lưu lịch sử thay đổi trạng thái
-        order.history.push({ status });
+        order.history.push({ date: new Date(), status });
 
         order.status = status;
         await order.save();

@@ -17,6 +17,7 @@ type ProductListProps = {
 const ProductList = ({ products, pagination }: ProductListProps) => {
     const queryClient = useQueryClient();
     const [user] = useLocalStorage("user", {}); 
+    console.log(user);
     const userId = user?.user._id;
 
     const { mutate } = useMutation({
